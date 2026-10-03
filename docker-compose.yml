@@ -7,8 +7,8 @@ services:
     depends_on:
       - mongo
     volumes:
-      - ./app:/srv/app   # live code for development
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - .:/srv   # live code + tests for development
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /srv/app
   mongo:
     image: mongo:7
     volumes:

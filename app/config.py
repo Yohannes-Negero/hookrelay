@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     mongo_uri: str = "mongodb://localhost:27017"
     mongo_db: str = "hookrelay"
     admin_token: str = "change-me"
+    stripe_webhook_secret: str = ""
+
+    def webhook_secret_for(self, provider: str) -> str:
+        return {"stripe": self.stripe_webhook_secret}.get(provider, "")
 
 
 @lru_cache

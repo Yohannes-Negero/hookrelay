@@ -13,6 +13,10 @@ async def connect() -> None:
     _client = AsyncMongoClient(settings.mongo_uri)
     db = _client[settings.mongo_db]
     await db.merchants.create_index("api_key_hash", unique=True)
+    # Idempotency: the same provider event can only be stored once.
+    await db.events.create_index(
+        [("provider", 1), ("provider_event_id", 1)], unique=True
+    )
 
 
 async def disconnect() -> None:

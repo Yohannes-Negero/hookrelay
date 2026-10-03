@@ -2,32 +2,34 @@
 
 Receives, verifies and reliably relays payment webhooks (Stripe first).
 
-**Status:** Day 1 — scaffold, Mongo connection, merchant API keys.
+**Status:** Day 2 — Stripe webhook receiver with signature verification and idempotent storage.
+
+## Features so far
+
+- Merchant API keys (hashed in the database, shown once)
+- `POST /webhooks/stripe`: verifies the `Stripe-Signature` header (HMAC-SHA256, 5-minute replay window), stores the event, and ignores duplicates thanks to a unique index on `(provider, provider_event_id)`
 
 ## Run locally
 
 ```bash
-cp .env.example .env        # then set ADMIN_TOKEN
+cp .env.example .env        # set ADMIN_TOKEN and STRIPE_WEBHOOK_SECRET
 docker compose up --build
 ```
 
 Open http://localhost:8000/docs
 
-## Try it
+### Receive real Stripe test events
 
 ```bash
-# create a merchant (admin only) — the API key is shown once
-curl -X POST localhost:8000/merchants \
-  -H "X-Admin-Token: <ADMIN_TOKEN>" -H "Content-Type: application/json" \
-  -d '{"name": "Acme Store"}'
-
-# authenticate as that merchant
-curl localhost:8000/merchants/me -H "X-API-Key: <api_key>"
+stripe login
+stripe listen --forward-to localhost:8000/webhooks/stripe   # prints the whsec_ secret
+stripe trigger payment_intent.succeeded
 ```
 
 ## Tests
 
 ```bash
-pip install -r requirements-dev.txt
-pytest
+docker compose run --rm api sh -c "pip install -q -r requirements-dev.txt && python -m pytest -q"
 ```
+
+Covered: valid / tampered / expired / wrong-secret signatures, duplicate events processed once, malformed payloads.
